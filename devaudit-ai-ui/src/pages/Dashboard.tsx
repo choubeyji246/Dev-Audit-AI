@@ -1,7 +1,7 @@
-import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth, useClerk } from '@clerk/clerk-react';
 import axios from 'axios';
+import { getAuthHeaders, clearManualAuth } from '../utils/auth';
 import { 
   Shield, 
   Activity, 
@@ -11,7 +11,6 @@ import {
   ChevronRight, 
   LayoutDashboard, 
   Folder, 
-  History, 
   Settings, 
   LogOut,
   Terminal
@@ -21,12 +20,13 @@ import { useNavigate } from 'react-router-dom';
 
 // Global Store State Utilities
 import type { RootState } from '../store';
-import { setSidebarTab } from '../store/uiSlice';
+import { setSidebarTab, setSelectedRepo } from '../store/uiSlice';
 
 // Sub-Panel Component Layout Imports
 import NewReview from './NewReview';
 import AuditReportView from './AuditReportView';
 import RepoChat from './RepoChat';
+import RepoSelector from '../components/RepoSelector';
 import SettingsPage from './Settings'; // 💡 Import the new settings page node!
 
 export default function Dashboard() {
@@ -37,42 +37,44 @@ export default function Dashboard() {
   const { signOut } = useClerk();
 
   // 🔄 React Query Hook: Pulls platform data updates directly from your backend node
-  const { data: metrics } = useQuery({
+  const { data: metricsData } = useQuery({
     queryKey: ['repoMetrics'],
     queryFn: async () => {
-      const token = await getToken();
+      const headers = await getAuthHeaders(getToken);
       const response = await axios.get('http://localhost:5000/api/repos/metrics-summary', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers,
       });
       return response.data;
     },
-    initialData: {
-      totalReviews: 128,
-      securityIssues: 45,
-      avgScore: 7.8,
-      highSeverity: 15,
-      recentReviews: [
-        { id: "6a0c3eee39d6ce9890bdcad2", name: "MyApp Backend Core", score: 7.8, issues: "High/Medium", date: "Nov 8, 2026" },
-        { id: "e-commerce-repo-id", name: "E-Commerce Repo Pipeline", score: 2.8, issues: "Critical Threats", date: "Dec 3, 2026" },
-        { id: "portfolio-site-id", name: "Client Portfolio Site", score: 9.5, issues: "Clean Build", date: "Jan 14, 2026" }
-      ]
-    }
   });
+
+  const metrics = metricsData ?? {
+    totalReviews: 0,
+    securityIssues: 0,
+    avgScore: 0,
+    highSeverity: 0,
+    recentReviews: [],
+  };
 
   const handleLogout = async () => {
     try {
+      clearManualAuth();
       await signOut();
       navigate('/login');
     } catch (error) {
-      console.error("❌ Session Evacuation Error:", error);
+      console.error('❌ Session Evacuation Error:', error);
+      clearManualAuth();
+      navigate('/login');
     }
   };
 
+  const selectedRepoId = useSelector((state: RootState) => state.ui.selectedRepoId);
+
   return (
-    <div className="w-screen h-screen min-h-screen max-h-screen bg-background text-textmain flex overflow-hidden static">
+    <div className="min-h-screen bg-background text-textmain flex flex-col lg:flex-row">
       
       {/* 🧭 NAVIGATION SIDEBAR PANEL */}
-      <aside className="w-64 bg-surface border-r border-bordermuted flex flex-col justify-between p-4 z-30 select-none shrink-0 h-full">
+      <aside className="w-full lg:w-64 bg-surface border-b lg:border-b-0 lg:border-r border-bordermuted flex flex-col justify-between p-4 z-30 select-none shrink-0 h-auto lg:h-full">
         <div className="space-y-8">
           {/* Main Logo Header Row */}
           <div className="flex items-center gap-3 px-2 pt-2">
@@ -132,7 +134,7 @@ export default function Dashboard() {
         {currentTab === 'new-review' ? (
           <NewReview />
         ) : currentTab === 'repositories' ? (
-          <AuditReportView repoId="6a0c3eee39d6ce9890bdcad2" />
+          <AuditReportView repoId={selectedRepoId || metrics.recentReviews?.[0]?.id} />
         ) : currentTab === 'history' ? (
           <RepoChat />
         ) : currentTab === 'settings' ? (
@@ -149,6 +151,9 @@ export default function Dashboard() {
               <div>
                 <h1 className="text-3xl font-extrabold tracking-tight">Workspace Metrics</h1>
                 <p className="text-textmuted text-sm mt-1">Real-time repository threat and codebase stability indexes.</p>
+              </div>
+              <div className="ml-6">
+                <RepoSelector />
               </div>
               <button 
                 onClick={() => dispatch(setSidebarTab('new-review'))}
@@ -199,7 +204,7 @@ export default function Dashboard() {
                     {metrics.recentReviews.map((repo: any, i: number) => (
                       <tr 
                         key={i} 
-                        onClick={() => dispatch(setSidebarTab('repositories'))}
+                        onClick={() => { dispatch(setSelectedRepo(repo.id)); dispatch(setSidebarTab('repositories')); }}
                         className="hover:bg-panel/20 transition-all group cursor-pointer"
                       >
                         <td className="py-4 font-medium text-textmain flex items-center gap-2">

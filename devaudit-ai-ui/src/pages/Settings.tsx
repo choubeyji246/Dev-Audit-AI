@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
+import axios from 'axios';
+import { getAuthHeaders, getManualToken } from '../utils/auth';
 import { Settings, Shield, Bell, Cpu, Save, Key, Sliders, CheckCircle } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useUser();
   const { getToken } = useAuth();
+  const [manualProfile, setManualProfile] = useState<any | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   
   // Local Config Form States
   const [modelTemperature, setModelTemperature] = useState(0.2);
@@ -12,11 +17,38 @@ export default function SettingsPage() {
   const [scanOnPush, setScanOnPush] = useState(true);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!getManualToken()) return;
+      setIsLoadingProfile(true);
+      setProfileError(null);
+
+      try {
+        const headers = await getAuthHeaders(getToken);
+        const response = await axios.get('http://localhost:5000/api/auth/profile', {
+          headers,
+        });
+
+        setManualProfile(response.data.user || response.data);
+      } catch (error: any) {
+        setProfileError(error?.response?.data?.message || 'Unable to fetch manual profile.');
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchProfile();
+  }, [getToken]);
+
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
   };
+
+  const profileName = manualProfile?.name || user?.fullName || 'Developer Session Token';
+  const profileEmail = manualProfile?.email || user?.primaryEmailAddress?.emailAddress || 'token@dev.audit.ai';
+  const profileAvatar = manualProfile?.avatar || user?.imageUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80';
 
   return (
     <div className="flex-1 bg-background overflow-y-auto p-8 relative h-full">
@@ -126,13 +158,13 @@ export default function SettingsPage() {
           <div className="glass-panel p-6 space-y-4 text-center flex flex-col items-center">
             {/* User Profile Avatar Frame */}
             <img 
-              src={user?.imageUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=80&h=80&q=80"} 
+              src={profileAvatar} 
               alt="User Token Profile" 
               className="h-16 w-16 rounded-xl border border-bordermuted shadow-glass object-cover mb-2 select-none"
             />
             <div className="space-y-0.5">
-              <h3 className="font-bold text-base text-textmain">{user?.fullName || "Developer Session Token"}</h3>
-              <p className="text-xs text-textmuted font-mono">{user?.primaryEmailAddress?.emailAddress || "token@dev.audit.ai"}</p>
+              <h3 className="font-bold text-base text-textmain">{profileName}</h3>
+              <p className="text-xs text-textmuted font-mono">{profileEmail}</p>
             </div>
 
             <div className="w-full border-t border-bordermuted/60 pt-4 text-left space-y-3">

@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
+import { getAuthHeaders } from '../utils/auth';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../store';
+import { setSelectedRepo } from '../store/uiSlice';
 import { Terminal, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 
 interface Message {
@@ -29,13 +33,20 @@ export default function RepoChat() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Redux hooks: selected repo and dispatcher
+  const dispatch = useDispatch();
+  const selectedRepoId = useSelector((state: RootState) => state.ui.selectedRepoId);
+
   const chatMutation = useMutation({
     mutationFn: async (userPrompt: string) => {
-      const token = await getToken();
+      const headers = await getAuthHeaders(getToken);
+      const repoId = selectedRepoId;
+      if (!repoId) throw new Error('No repository selected for chat');
+
       const response = await axios.post(
-        'http://localhost:5000/api/chat/query',
-        { prompt: userPrompt, repoId: "6a0c3eee39d6ce9890bdcad2" },
-        { headers: { Authorization: `Bearer ${token}` } }
+        `http://localhost:5000/api/repos/${repoId}/chat`,
+        { query: userPrompt },
+        { headers }
       );
       return response.data;
     },
@@ -45,7 +56,7 @@ export default function RepoChat() {
         {
           id: `ai-${Date.now()}`,
           sender: 'ai',
-          text: data.reply || "Context interpretation processed successfully with empty variant return strings.",
+          text: data.answer || data.reply || "Context interpretation processed successfully with empty variant return strings.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ]);
@@ -83,9 +94,25 @@ export default function RepoChat() {
     chatMutation.mutate(currentPrompt);
   };
 
+  useEffect(() => {
+    (async () => {
+      if (!selectedRepoId) {
+        try {
+          const headers = await getAuthHeaders(getToken);
+          const resp = await axios.get('http://localhost:5000/api/repos', { headers });
+          const repos = resp.data?.repos || [];
+          if (repos.length > 0) dispatch(setSelectedRepo(repos[0].id));
+        } catch (e) {
+          // ignore
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     /* 🛠️ CHANGED: Enforced hard height limitations to block parent overflow inheritance */
-    <div className="w-full h-full max-h-screen bg-background flex flex-col relative overflow-hidden" style={{paddingTop:"63px"}}>
+    <div className="w-full min-h-screen bg-background flex flex-col relative overflow-hidden" style={{ paddingTop: '63px' }}>
       
       {/* 🌌 Atmospheric Backdrop Glow Filters */}
       <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-accentpurple/5 rounded-full filter blur-[130px] pointer-events-none" />

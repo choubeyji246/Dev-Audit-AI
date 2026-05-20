@@ -1,19 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { Webhook } from 'svix';
 import bodyParser from 'body-parser';
-import mongoose from 'mongoose';
+import { User } from '../models/User';
 
 const router = Router();
-
-// Mongoose Baseline User Schema Reference
-const UserSchema = new mongoose.Schema({
-  clerkId: { type: String, required: true, unique: true },
-  email: { type: String, required: true },
-  username: { type: String },
-  avatar: { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
-const User = mongoose.models.User || mongoose.model('clerkUser', UserSchema);
 
 router.post(
   '/clerk',
@@ -56,14 +46,15 @@ router.post(
     if (eventType === 'user.created' || eventType === 'user.updated') {
       const { email_addresses, username, image_url } = evt.data;
       const primaryEmail = email_addresses[0]?.email_address;
+      const friendlyName = username || (primaryEmail ? primaryEmail.split('@')[0] : `clerk-${id.slice(0, 8)}`);
 
       // Upsert user account cleanly into MongoDB Atlas collection space
       await User.findOneAndUpdate(
         { clerkId: id },
         {
           clerkId: id,
-          email: primaryEmail,
-          username: username || primaryEmail.split('@')[0],
+          email: primaryEmail || `user-${id}@clerk.local`,
+          name: friendlyName,
           avatar: image_url
         },
         { upsert: true, new: true }

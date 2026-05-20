@@ -1,14 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SignedIn, SignedOut } from '@clerk/clerk-react';
-import Landing from './pages/Landing';   // 💡 Import your gorgeous new landing page
+import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import SignUpPage from './pages/SignUp';
+import HybridProtectedRoute from './components/HybridProtectedRoute';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
+    <div className="min-h-screen bg-background">
+      <Router>
+        <Routes>
         {/* PUBLIC PLATFORM LANDING PORTAL */}
         <Route path="/" element={<Landing />} />
 
@@ -46,14 +48,9 @@ export default function App() {
         <Route
           path="/workspace"
           element={
-            <>
-              <SignedIn>
-                <Dashboard />
-              </SignedIn>
-              <SignedOut>
-                <Navigate to="/login" replace />
-              </SignedOut>
-            </>
+            <HybridProtectedRoute>
+              <Dashboard />
+            </HybridProtectedRoute>
           }
         />
 
@@ -61,5 +58,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
+  </div>
   );
 }

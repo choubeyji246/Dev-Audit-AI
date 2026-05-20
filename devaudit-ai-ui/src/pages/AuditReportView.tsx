@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
-import { Shield, LayoutGrid, Terminal, ShieldAlert, Cpu, Eye, CheckCircle, Download, FileText, ChevronRight, AlertTriangle } from 'lucide-react';
+import { getAuthHeaders } from '../utils/auth';
+import { ShieldAlert, Download, ChevronRight, AlertTriangle } from 'lucide-react';
 
 interface Issue {
   id: string;
@@ -15,78 +16,129 @@ interface Issue {
   category: 'Security' | 'Performance' | 'Quality';
 }
 
-export default function AuditReportView({ repoId }: { repoId: string }) {
+interface ReportData {
+  status: string;
+  repoName: string;
+  scanStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  score?: number;
+  securityCount?: number;
+  performanceCount?: number;
+  qualityCount?: number;
+  issues?: Issue[];
+  report?: string;
+}
+
+export default function AuditReportView({ repoId }: { repoId?: string | null }) {
   const { getToken } = useAuth();
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
   const [selectedIssue, setSelectedIssue] = useState<string | null>("iss-1");
 
   // 🔄 React Query to fetch the dynamic analysis data packets from your backend worker database
-  const { data: report, isLoading } = useQuery({
+  const { data: report, isLoading, refetch } = useQuery({
     queryKey: ['auditReport', repoId],
     queryFn: async () => {
-      const token = await getToken();
+      if (!repoId) return Promise.resolve(null as any);
+      const headers = await getAuthHeaders(getToken);
       const response = await axios.get(`http://localhost:5000/api/repos/report/${repoId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers,
       });
       return response.data;
     },
-    // Mock data structures matching the exact visual values shown in your design screenshot assets
-    initialData: {
-      repoName: "MyApp Backend Core",
-      score: 7.8,
-      securityCount: 12,
-      performanceCount: 8,
-      qualityCount: 0,
-      issues: [
-        {
-          id: "iss-1",
-          title: "SQL Injection Risk",
-          severity: "HIGH",
-          file: "UserService.java",
-          line: 45,
-          description: "User input parameter token arrays are mapped directly to database execution blocks without prior validation.",
-          suggestion: "Utilize Prepared Statements and parameterized token bindings to block raw SQL engine hijack scenarios.",
-          category: "Security"
-        },
-        {
-          id: "iss-2",
-          title: "Hardcoded Credentials",
-          severity: "MEDIUM",
-          file: "Config.java",
-          line: 12,
-          description: "A production environment API authentication private key string was found committed directly to git track.",
-          suggestion: "Migrate private infrastructure verification parameters out of code blocks and read via system environment variables.",
-          category: "Security"
-        },
-        {
-          id: "iss-3",
-          title: "Synchronous Blocked Connection Loop",
-          severity: "HIGH",
-          file: "Checkout.js",
-          line: 88,
-          description: "A synchronous thread execution loop blocks the inbound pool while processing asynchronous token gateways.",
-          suggestion: "Wrap the connection mapping logic in an asynchronous worker block or use promise concurrency arrays.",
-          category: "Performance"
-        }
-      ] as Issue[]
-    }
+    enabled: Boolean(repoId),
+    retry: 1,
   });
 
-  const filteredIssues = report.issues.filter(iss => 
+  if (!repoId) {
+    return (
+      <div className="flex-1 bg-background overflow-y-auto p-8 relative flex items-center justify-center">
+        <div className="glass-panel p-8 text-center">
+          <h3 className="text-lg font-bold">No repository selected</h3>
+          <p className="text-sm text-textmuted mt-2">Select a repository from the dashboard to view its audit report.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const reportData = report as ReportData | null;
+  const issuesList: Issue[] = reportData && Array.isArray(reportData.issues) ? reportData.issues : [];
+  const filteredIssues = issuesList.filter((iss) => 
     activeFilter === 'ALL' ? true : iss.severity === activeFilter
   );
+  const hasReport = Boolean(
+    reportData && (
+      reportData.report ||
+      reportData.score ||
+      reportData.securityCount ||
+      reportData.performanceCount ||
+      reportData.qualityCount ||
+      issuesList.length > 0
+    )
+  );
+  const statusLabel = reportData?.scanStatus === 'completed'
+    ? 'Scan Completed'
+    : reportData?.scanStatus === 'processing'
+      ? 'Scan In Progress'
+      : reportData?.scanStatus === 'pending'
+        ? 'Scan Pending'
+        : reportData?.scanStatus === 'failed'
+          ? 'Scan Failed'
+          : 'Report Status';
+
+  useEffect(() => {
+    if (!repoId || !reportData) return;
+    if (reportData.scanStatus === 'pending' || reportData.scanStatus === 'processing') {
+      const timer = window.setInterval(() => {
+        refetch();
+      }, 5000);
+
+      return () => window.clearInterval(timer);
+    }
+  }, [repoId, reportData?.scanStatus, refetch]);
 
   return (
-    <div className="flex-1 bg-background overflow-y-auto p-8 relative">
-      {/* 🌌 Cinematic Atmosphere Backdrop Glows */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-accentblue/5 rounded-full filter blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-accentpurple/5 rounded-full filter blur-[120px] pointer-events-none" />
+    <div className="flex-1 bg-background overflow-y-auto p-8 relative min-h-screen">
+      {isLoading && (
+        <div className="glass-panel p-8 text-center max-w-3xl mx-auto mb-8">
+          <div className="text-lg font-bold text-textmain">Loading repository analysis...</div>
+          <p className="text-sm text-textmuted mt-2">Fetching audit report from MongoDB. This may take a moment.</p>
+        </div>
+      )}
 
-      {/* TOP HEADER STATUS ACTION TRACK */}
-      <header className="flex justify-between items-center mb-8 relative z-10 border-b border-bordermuted pb-6">
+      {!isLoading && repoId && !hasReport && (
+        <div className="glass-panel p-8 text-center max-w-3xl mx-auto mb-8">
+          <div className="text-lg font-bold text-textmain">No audit report found yet</div>
+          <p className="text-sm text-textmuted mt-2">This repository has been queued or scanned, but the report has not been produced yet. Run another review or refresh once the worker finishes.</p>
+          {reportData?.scanStatus && (
+            <div className="mt-4 inline-flex rounded-full bg-surface/80 px-4 py-2 text-xs uppercase tracking-widest text-textmuted border border-bordermuted">
+              {statusLabel}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!repoId && (
+        <div className="glass-panel p-8 text-center max-w-3xl mx-auto mb-8">
+          <div className="text-lg font-bold text-textmain">Select a repository first</div>
+          <p className="text-sm text-textmuted mt-2">Choose a repository from the dashboard or open the Repositories tab to load report details.</p>
+        </div>
+      )}
+
+      {(!isLoading && hasReport) && (
+        <>
+          {/* 🌌 Cinematic Atmosphere Backdrop Glows */}
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-accentblue/5 rounded-full filter blur-[140px] pointer-events-none" />
+          <div className="absolute top-1/3 right-10 w-[450px] h-[450px] bg-accentpurple/5 rounded-full filter blur-[120px] pointer-events-none" />
+
+          {/* TOP HEADER STATUS ACTION TRACK */}
+      <header className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-8 relative z-10 border-b border-bordermuted pb-6">
         <div>
           <div className="text-xs font-mono text-accentcyan uppercase tracking-widest">Diagnostic Summary Ledgers</div>
-          <h1 className="text-3xl font-black mt-1 tracking-tight">{report.repoName}</h1>
+          <h1 className="text-3xl font-black mt-1 tracking-tight">{reportData?.repoName}</h1>
+          {reportData?.scanStatus && (
+            <span className="mt-3 inline-flex rounded-full bg-surface/80 px-4 py-2 text-xs uppercase tracking-widest text-textmuted border border-bordermuted">
+              {statusLabel}
+            </span>
+          )}
         </div>
         <button className="bg-panel border border-bordermuted hover:border-accentblue/50 text-textmain px-5 py-2.5 rounded-lg font-semibold text-sm shadow-glass transition-all flex items-center gap-2 cursor-pointer">
           <Download size={15} />
@@ -107,11 +159,11 @@ export default function AuditReportView({ repoId }: { repoId: string }) {
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" className="stroke-surface" strokeWidth="8" fill="transparent" />
                 <circle cx="50" cy="50" r="40" className="stroke-accentblue" strokeWidth="8" fill="transparent" 
-                        strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * report.score) / 10} strokeLinecap="round" />
+                        strokeDasharray="251.2" strokeDashoffset={251.2 - (251.2 * (reportData?.score ?? 0)) / 10} strokeLinecap="round" />
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
                 <span className="text-xs uppercase font-mono tracking-widest text-textmuted">Score</span>
-                <span className="text-5xl font-black text-textmain mt-0.5">{report.score}</span>
+                <span className="text-5xl font-black text-textmain mt-0.5">{reportData?.score ?? 0}</span>
               </div>
             </div>
 
@@ -121,19 +173,19 @@ export default function AuditReportView({ repoId }: { repoId: string }) {
                 <span className="text-sm text-textmuted flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-accentblue" /> Security Counts
                 </span>
-                <span className="font-mono text-sm font-bold text-accentcyan">{report.securityCount}</span>
+                <span className="font-mono text-sm font-bold text-accentcyan">{reportData?.securityCount ?? 0}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-surface/50 rounded-lg border border-bordermuted">
                 <span className="text-sm text-textmuted flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-accentpurple" /> Performance Indices
                 </span>
-                <span className="font-mono text-sm font-bold text-accentpurple">{report.performanceCount}</span>
+                <span className="font-mono text-sm font-bold text-accentpurple">{reportData?.performanceCount ?? 0}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-surface/50 rounded-lg border border-bordermuted opacity-50">
                 <span className="text-sm text-textmuted flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-accentgreen" /> Quality Standards
                 </span>
-                <span className="font-mono text-sm font-bold text-accentgreen">{report.qualityCount}</span>
+                <span className="font-mono text-sm font-bold text-accentgreen">{reportData?.qualityCount ?? 0}</span>
               </div>
             </div>
           </div>
@@ -159,6 +211,14 @@ export default function AuditReportView({ repoId }: { repoId: string }) {
           </div>
 
           {/* DYNAMIC LIST INTERFACES */}
+          {/* If no structured issues but we have a textual report, show it */}
+          {(!filteredIssues || filteredIssues.length === 0) && reportData?.report && (
+            <div className="glass-panel p-6">
+              <h3 className="text-sm font-bold text-textmuted uppercase mb-4">AI Analysis Report</h3>
+              <pre className="text-sm text-textmain whitespace-pre-wrap">{reportData.report}</pre>
+            </div>
+          )}
+
           <div className="space-y-4">
             {filteredIssues.map((issue) => {
               const isSelected = selectedIssue === issue.id;
@@ -222,8 +282,9 @@ export default function AuditReportView({ repoId }: { repoId: string }) {
             })}
           </div>
         </div>
-
       </div>
+    </>
+      )}
     </div>
   );
 }

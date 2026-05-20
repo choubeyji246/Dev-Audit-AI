@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
 import axios from 'axios';
+import { getAuthHeaders } from '../utils/auth';
 import { Shield, GitBranch, Terminal, Globe, AlertCircle, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setSidebarTab } from '../store/uiSlice';
@@ -22,19 +23,27 @@ export default function NewReview() {
     mutationFn: async (submitData: { url: string; branch: string }) => {
       setErrorLog(null);
       const token = await getToken();
-      
+
+      // Parse owner and repo name from common Git URL formats
+      const match = submitData.url.match(/github.com[:\/ ]([^\/]+)\/([^\/]+)(?:\.git)?$/i);
+      if (!match) throw { response: { data: { error: 'Invalid GitHub repository URL. Use https://github.com/owner/repo.git' } } };
+      const owner = match[1];
+      const repoName = match[2].replace(/\.git$/i, '');
+
       // Points straight to your local Node.js API server
+      const headers = await getAuthHeaders(getToken);
       const response = await axios.post(
         'http://localhost:5000/api/repos/scan',
-        { 
-          repositoryUrl: submitData.url,
-          branch: submitData.branch 
+        {
+          owner,
+          repoName,
+          branch: submitData.branch,
         },
         {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
         }
       );
       return response.data;

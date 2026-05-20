@@ -1,13 +1,13 @@
-import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
+
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { connectDB } from './config/db';
 import authRoutes from './routes/auth.routes';
 import repoRoutes from './routes/repo.routes';
 import clerkRoutes from './routes/webhook.routes';
 import { initWorker } from './config/worker';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
