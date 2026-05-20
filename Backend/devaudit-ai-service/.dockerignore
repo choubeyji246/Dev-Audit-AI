@@ -1,0 +1,25 @@
+# Ignore Git folders
+.git
+.gitignore
+
+# 🛡️ Ignore Sensitive Local Credentials
+.env
+.env.local
+.env.*
+*.json
+*.key
+
+# 🐍 Ignore heavy local Python/Node dependencies & caches
+__pycache__/
+*.pyc
+venv/
+.venv/
+env/
+node_modules/
+dist/
+build/
+
+# Ignore Editor preferences
+.vscode/
+.idea/
+*.swp
