@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { apiClient } from '../api';
 import { useAuth } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../store';
 import { setSelectedRepo, setRepos } from '../store/uiSlice';
 import { getAuthHeaders, getManualToken } from '../utils/auth';
+import { apiClient } from '../api';
 
 export default function RepoSelector() {
   const { getToken } = useAuth();
@@ -44,14 +44,14 @@ export default function RepoSelector() {
           headers = await getAuthHeaders(getToken);
         }
 
-        // const resp = await apiClient.get('/api/repos', { headers });
-        // const fetchedRepos = resp.data.repos || [];
+        const resp = await apiClient.get('/api/repos', { headers });
+        const fetchedRepos = resp.data.repos || [];
         
-        // dispatch(setRepos(fetchedRepos));
+        dispatch(setRepos(fetchedRepos));
         
-        // if (!selected && fetchedRepos.length > 0) {
-        //   dispatch(setSelectedRepo(fetchedRepos[0].id));
-        // }
+        if (!selected && fetchedRepos.length > 0) {
+          dispatch(setSelectedRepo(fetchedRepos[0].id));
+        }
         
         // Mark as successfully completed
         hasFetchedRepos.current = true;
