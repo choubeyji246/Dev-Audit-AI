@@ -64,7 +64,7 @@ export default function RepoSelector() {
         isCurrentlyFetching.current = false;
       }
     })();
-  }, [getToken, dispatch, selected, repos]); // Track the stable repos object instance
+  }, [getToken, dispatch, selected, repos]); 
 
   return (
     <div className="flex items-center gap-3">
