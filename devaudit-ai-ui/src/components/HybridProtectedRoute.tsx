@@ -9,7 +9,6 @@ interface HybridProtectedRouteProps {
 export default function HybridProtectedRoute({ children }: HybridProtectedRouteProps) {
   const { isSignedIn, isLoaded } = useAuth();
   
-  // 🌟 FIX: Fetch the token synchronously on initialization frame instead of delaying inside useEffect
   const hasManualToken = Boolean(getManualToken());
 
   // Wait until Clerk completes its initial loading phase
