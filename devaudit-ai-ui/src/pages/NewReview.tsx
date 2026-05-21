@@ -22,8 +22,6 @@ export default function NewReview() {
   const scanMutation = useMutation({
     mutationFn: async (submitData: { url: string; branch: string }) => {
       setErrorLog(null);
-      const token = await getToken();
-
       // Parse owner and repo name from common Git URL formats
       const match = submitData.url.match(/github.com[:\/ ]([^\/]+)\/([^\/]+)(?:\.git)?$/i);
       if (!match) throw { response: { data: { error: 'Invalid GitHub repository URL. Use https://github.com/owner/repo.git' } } };
@@ -48,7 +46,7 @@ export default function NewReview() {
       );
       return response.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setScanSuccess(true);
       // Invalidate active dashboard query state vectors so metrics revalidation updates instantly
       queryClient.invalidateQueries({ queryKey: ['repoMetrics'] });

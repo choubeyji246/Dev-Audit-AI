@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '../api';
 import { useAuth } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';

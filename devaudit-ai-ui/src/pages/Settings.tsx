@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { apiClient } from '../api';
 import { getAuthHeaders, getManualToken } from '../utils/auth';
-import { Settings, Shield, Bell, Cpu, Save, Key, Sliders, CheckCircle } from 'lucide-react';
+import { Bell, Cpu, Save, Key, CheckCircle } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -53,6 +53,16 @@ export default function SettingsPage() {
   return (
     <div className="flex-1 bg-background overflow-y-auto p-8 relative h-full">
       {/* 🌌 Cyber Neon Ambient Lighting Backdrop Glows */}
+      {(profileError || isLoadingProfile) && (
+        <div className="mb-6 space-y-2">
+          {isLoadingProfile && (
+            <div className="text-sm text-textmuted">Loading profile data…</div>
+          )}
+          {profileError && (
+            <div className="text-sm text-rose-400">{profileError}</div>
+          )}
+        </div>
+      )}
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-accentblue/5 rounded-full filter blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 left-1/4 w-[400px] h-[400px] bg-accentpurple/5 rounded-full filter blur-[100px] pointer-events-none" />
 

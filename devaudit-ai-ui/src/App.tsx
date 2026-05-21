@@ -3,7 +3,7 @@ import { SignedIn, SignedOut } from '@clerk/clerk-react';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
-import SignUpPage from './pages/SignUp';
+import SignUpPage from './pages/Signup';
 import HybridProtectedRoute from './components/HybridProtectedRoute';
 
 export default function App() {

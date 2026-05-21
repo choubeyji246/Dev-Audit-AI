@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Terminal, Cpu, CheckCircle, ArrowRight } from 'lucide-react'; // 💡 Removed GitHub from here!
 
