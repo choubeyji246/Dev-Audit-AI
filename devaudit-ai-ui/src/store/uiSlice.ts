@@ -5,12 +5,14 @@ interface UIState {
   activeSidebarTab: string;
   isChatDrawerOpen: boolean;
   selectedRepoId: string | null;
+  repos: any[];
 }
 
 const initialState: UIState = {
   activeSidebarTab: 'dashboard',
   isChatDrawerOpen: false,
   selectedRepoId: null,
+  repos: [],
 };
 
 export const uiSlice = createSlice({
@@ -26,8 +28,12 @@ export const uiSlice = createSlice({
     setSelectedRepo: (state, action: PayloadAction<string | null>) => {
       state.selectedRepoId = action.payload;
     }
+    ,
+    setRepos: (state, action: PayloadAction<any[]>) => {
+      state.repos = action.payload;
+    }
   }
 });
 
-export const { setSidebarTab, toggleChatDrawer, setSelectedRepo } = uiSlice.actions;
+export const { setSidebarTab, toggleChatDrawer, setSelectedRepo, setRepos } = uiSlice.actions;
 export default uiSlice.reducer;

@@ -29,6 +29,9 @@ export default function RepoChat() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // read repos from Redux (populated by RepoSelector)
+  const repos = useSelector((state: RootState) => state.ui.repos || []);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -95,20 +98,11 @@ export default function RepoChat() {
   };
 
   useEffect(() => {
-    (async () => {
-      if (!selectedRepoId) {
-        try {
-          const headers = await getAuthHeaders(getToken);
-          const resp = await apiClient.get('/api/repos', { headers });
-          const repos = resp.data?.repos || [];
-          if (repos.length > 0) dispatch(setSelectedRepo(repos[0].id));
-        } catch (e) {
-          // ignore
-        }
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (selectedRepoId) return;
+    if (repos.length > 0) {
+      dispatch(setSelectedRepo(repos[0].id));
+    }
+  }, [selectedRepoId, repos, dispatch]);
 
   return (
     /* 🛠️ CHANGED: Enforced hard height limitations to block parent overflow inheritance */

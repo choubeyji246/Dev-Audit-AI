@@ -11,53 +11,48 @@ export default function App() {
     <div className="min-h-screen bg-background">
       <Router>
         <Routes>
-        {/* PUBLIC PLATFORM LANDING PORTAL */}
-        <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Landing />} />
 
-        {/* CUSTOM SIGN-IN PATHWAY */}
-        <Route
-          path="/login"
-          element={
-            <>
-              <SignedOut>
-                <Login />
-              </SignedOut>
-              <SignedIn>
-                <Navigate to="/workspace" replace />
-              </SignedIn>
-            </>
-          }
-        />
+          <Route
+            path="/login"
+            element={
+              <>
+                <SignedOut>
+                  <Login />
+                </SignedOut>
+                <SignedIn>
+                  <Navigate to="/workspace" replace />
+                </SignedIn>
+              </>
+            }
+          />
 
-        {/* CUSTOM SIGN-UP PATHWAY */}
-        <Route
-          path="/signup"
-          element={
-            <>
-              <SignedOut>
-                <SignUpPage />
-              </SignedOut>
-              <SignedIn>
-                <Navigate to="/workspace" replace />
-              </SignedIn>
-            </>
-          }
-        />
+          <Route
+            path="/signup"
+            element={
+              <>
+                <SignedOut>
+                  <SignUpPage />
+                </SignedOut>
+                <SignedIn>
+                  <Navigate to="/workspace" replace />
+                </SignedIn>
+              </>
+            }
+          />
 
-        {/* 🔒 PROTECTED CORE WORKSPACE ROUTE */}
-        <Route
-          path="/workspace"
-          element={
-            <HybridProtectedRoute>
-              <Dashboard />
-            </HybridProtectedRoute>
-          }
-        />
+          <Route
+            path="/workspace"
+            element = {
+              <HybridProtectedRoute>
+                <Dashboard />
+              </HybridProtectedRoute>
+            }
+          />
 
-        {/* CATCH-ALL FALLBACK */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
-  </div>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }
