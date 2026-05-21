@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getAuthHeaders } from '../utils/auth';
 import { ShieldAlert, Download, ChevronRight, AlertTriangle } from 'lucide-react';
 
@@ -39,7 +39,7 @@ export default function AuditReportView({ repoId }: { repoId?: string | null }) 
     queryFn: async () => {
       if (!repoId) return Promise.resolve(null as any);
       const headers = await getAuthHeaders(getToken);
-      const response = await axios.get(`http://localhost:5000/api/repos/report/${repoId}`, {
+      const response = await apiClient.get(`/api/repos/report/${repoId}`, {
         headers,
       });
       return response.data;

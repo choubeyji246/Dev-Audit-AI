@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { useAuth } from '@clerk/clerk-react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../store';
@@ -16,7 +16,7 @@ export default function RepoSelector() {
     (async () => {
       try {
         const headers = await getAuthHeaders(getToken);
-        const resp = await axios.get('http://localhost:5000/api/repos', { headers });
+        const resp = await apiClient.get('/api/repos', { headers });
         setRepos(resp.data.repos || []);
         if (!selected && (resp.data.repos || []).length > 0) {
           dispatch(setSelectedRepo(resp.data.repos[0].id));

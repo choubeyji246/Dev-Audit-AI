@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getAuthHeaders } from '../utils/auth';
 import { Shield, GitBranch, Terminal, Globe, AlertCircle, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
@@ -32,8 +32,8 @@ export default function NewReview() {
 
       // Points straight to your local Node.js API server
       const headers = await getAuthHeaders(getToken);
-      const response = await axios.post(
-        'http://localhost:5000/api/repos/scan',
+      const response = await apiClient.post(
+        '/api/repos/scan',
         {
           owner,
           repoName,

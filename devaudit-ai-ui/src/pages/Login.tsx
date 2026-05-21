@@ -2,7 +2,7 @@
 import { SignIn, useAuth } from '@clerk/clerk-react';
 import { Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getManualToken, setManualToken, setManualUser } from '../utils/auth';
 
 export default function Login() {
@@ -30,7 +30,7 @@ export default function Login() {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
+      const response = await apiClient.post('/api/auth/login', {
         email,
         password,
       });

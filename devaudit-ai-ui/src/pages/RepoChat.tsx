@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getAuthHeaders } from '../utils/auth';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../store';
@@ -43,8 +43,8 @@ export default function RepoChat() {
       const repoId = selectedRepoId;
       if (!repoId) throw new Error('No repository selected for chat');
 
-      const response = await axios.post(
-        `http://localhost:5000/api/repos/${repoId}/chat`,
+      const response = await apiClient.post(
+        `/api/repos/${repoId}/chat`,
         { query: userPrompt },
         { headers }
       );
@@ -99,7 +99,7 @@ export default function RepoChat() {
       if (!selectedRepoId) {
         try {
           const headers = await getAuthHeaders(getToken);
-          const resp = await axios.get('http://localhost:5000/api/repos', { headers });
+          const resp = await apiClient.get('/api/repos', { headers });
           const repos = resp.data?.repos || [];
           if (repos.length > 0) dispatch(setSelectedRepo(repos[0].id));
         } catch (e) {

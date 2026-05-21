@@ -2,7 +2,7 @@
 import { SignUp, useAuth } from '@clerk/clerk-react';
 import { Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getManualToken, setManualToken, setManualUser } from '../utils/auth';
 
 export default function SignUpPage() {
@@ -31,7 +31,7 @@ export default function SignUpPage() {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
+      const response = await apiClient.post('/api/auth/register', {
         name,
         email,
         password,

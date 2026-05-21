@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth, useClerk } from '@clerk/clerk-react';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getAuthHeaders, clearManualAuth } from '../utils/auth';
 import { 
   Shield, 
@@ -41,7 +41,7 @@ export default function Dashboard() {
     queryKey: ['repoMetrics'],
     queryFn: async () => {
       const headers = await getAuthHeaders(getToken);
-      const response = await axios.get('http://localhost:5000/api/repos/metrics-summary', {
+      const response = await apiClient.get('/api/repos/metrics-summary', {
         headers,
       });
       return response.data;

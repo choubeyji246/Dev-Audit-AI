@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
-import axios from 'axios';
+import { apiClient } from '../api';
 import { getAuthHeaders, getManualToken } from '../utils/auth';
 import { Settings, Shield, Bell, Cpu, Save, Key, Sliders, CheckCircle } from 'lucide-react';
 
@@ -25,7 +25,7 @@ export default function SettingsPage() {
 
       try {
         const headers = await getAuthHeaders(getToken);
-        const response = await axios.get('http://localhost:5000/api/auth/profile', {
+        const response = await apiClient.get('/api/auth/profile', {
           headers,
         });
 
