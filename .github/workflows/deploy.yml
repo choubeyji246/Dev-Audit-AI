@@ -3,7 +3,7 @@ name: DevAudit AI Cloud Deployment Engine
 on:
   push:
     branches:
-      - master # 💡 Fires automatically whenever you push to your master branch track
+      - main # 🚀 Triggers automatically whenever you push code modifications to the main branch
 
 jobs:
   deploy:
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Code Repository Frames
         uses: actions/checkout@v4
 
-      - name: Deploy Backend Stack to AWS EC2 via Secure SSH Shell
+      - name: Deploy Full Stack Cluster to AWS EC2 via Secure SSH Shell
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -24,42 +24,82 @@ jobs:
           script: |
             echo "🚀 Initializing Remote Server Deployment Framework..."
             
-            # 1. Update system dependencies and inject Node.js runtime layers safely if missing
+            # 1. Update package manager indexes if baseline engines are missing
             sudo apt-get update -y
             if ! type node > /dev/null 2>&1; then
-              echo "📦 Installing Node.js LTS Distribution..."
+              echo "📦 Provisioning missing Node.js runtime layers..."
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
             fi
 
-            # 2. Install PM2 globally to keep our server running 24/7 in the background
             if ! type pm2 > /dev/null 2>&1; then
               sudo npm install -g pm2
             fi
 
-            # 3. Create or navigate to project application frame paths
+            # 2. Synchronize source asset directory modifications
             if [ ! -d "Dev-Audit-AI" ]; then
               echo "📂 Creating clean target directory deployment tracks..."
               git clone https://github.com/choubeyji246/Dev-Audit-AI.git
               cd Dev-Audit-AI
             else
               cd Dev-Audit-AI
-              echo "🔄 Pulling latest branch tracking references from GitHub..."
+              echo "🔄 Merging fresh code segments directly from GitHub origin main..."
               git reset --hard HEAD
-              git pull origin master
+              git pull origin main
             fi
 
-            # 4. Navigate into Backend block, install dependencies, and run hot swap reloads
-            cd Backend
-            npm install --production
+            # 3. Compile Core Node.js / TypeScript API Gateway Stack
+            echo "⚡ Compiling TypeScript build files..."
+            cd ~/Dev-Audit-AI/Backend # Navigates directly to your core node project directory
+            npm install
+            npm run build # Generates your required dist/ folder compilation maps
 
-            # 5. Bootstrap or update the background application daemon process safely
-            echo "⚡ Rebalancing PM2 process clusters..."
-            pm2 describe devaudit-backend > /dev/null 2>&1
-            if [ $? -eq 0 ]; then
-              pm2 reload devaudit-backend --update-env
+            # 4. Stabilize Python Microservice Dependencies
+            echo "🐍 Syncing Python AI worker libraries..."
+            cd ~/Dev-Audit-AI/Backend/devaudit-ai-service # Matches your real repository directory pattern
+            if [ -d "venv" ]; then
+              source venv/bin/activate
+              pip install -r requirements.txt
+              deactivate
             else
-              pm2 start server.js --name "devaudit-backend"
+              python3 -m venv venv
+              source venv/bin/activate
+              pip install -r requirements.txt
+              deactivate
             fi
+
+            # 5. Build Vite React Static Frontend Interface Assets
+            echo "💻 Refreshing Client Application Bundle Layers..."
+            cd ~/Dev-Audit-AI/devaudit-ai-ui
+            npm install
+            npm run build # Compiles fresh assets inside the tracking dev-audit-ui/dist directory
+
+            # 6. Apply Execution Bit Flags For Nginx Folder Traversal
+            chmod +x /home/ubuntu
+            chmod -R 755 ~/Dev-Audit-AI/devaudit-ai-ui/dist
+
+            # 7. Safe Balancing Matrix Re-cycles Inside PM2 Background Engines
+            echo "🔄 Synchronizing live process states inside process control managers..."
             
-            echo "🏁 Deployment cycle completed successfully!"
+            # --- TIER 1: NODE BACKEND GATEWAY RESTART PROTOCOL ---
+            pm2 describe devaudit-api > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+              echo "🔁 Hot-reloading active Node execution workers..."
+              pm2 reload devaudit-api --update-env
+            else
+              echo "🚀 Instantiating fresh Node lifecycle runtime engine..."
+              pm2 start dist/index.js --name "devaudit-api" # Points directly to your compiled script
+            fi
+
+            # --- TIER 2: PYTHON AI CORE ENGINE RESTART PROTOCOL ---
+            pm2 describe devaudit-ai > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+              echo "🔁 Hot-reloading active Python vector pipelines..."
+              pm2 reload devaudit-ai --update-env
+            else
+              echo "🚀 Instantiating fresh Uvicorn lifecycle workers..."
+              pm2 start "Backend/devaudit-ai-service/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000" --name "devaudit-ai" # Targets app/main.py configuration
+            fi
+
+            pm2 save
+            echo "🏁 Continuous Deployment integration completed successfully!"
