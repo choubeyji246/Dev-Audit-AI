@@ -1,0 +1,65 @@
+name: DevAudit AI Cloud Deployment Engine
+
+on:
+  push:
+    branches:
+      - master # 💡 Fires automatically whenever you push to your master branch track
+
+jobs:
+  deploy:
+    name: Execute Remote Handshake and Code Sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository Frames
+        uses: actions/checkout@v4
+
+      - name: Deploy Backend Stack to AWS EC2 via Secure SSH Shell
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Initializing Remote Server Deployment Framework..."
+            
+            # 1. Update system dependencies and inject Node.js runtime layers safely if missing
+            sudo apt-get update -y
+            if ! type node > /dev/null 2>&1; then
+              echo "📦 Installing Node.js LTS Distribution..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            fi
+
+            # 2. Install PM2 globally to keep our server running 24/7 in the background
+            if ! type pm2 > /dev/null 2>&1; then
+              sudo npm install -g pm2
+            fi
+
+            # 3. Create or navigate to project application frame paths
+            if [ ! -d "Dev-Audit-AI" ]; then
+              echo "📂 Creating clean target directory deployment tracks..."
+              git clone https://github.com/choubeyji246/Dev-Audit-AI.git
+              cd Dev-Audit-AI
+            else
+              cd Dev-Audit-AI
+              echo "🔄 Pulling latest branch tracking references from GitHub..."
+              git reset --hard HEAD
+              git pull origin master
+            fi
+
+            # 4. Navigate into Backend block, install dependencies, and run hot swap reloads
+            cd Backend
+            npm install --production
+
+            # 5. Bootstrap or update the background application daemon process safely
+            echo "⚡ Rebalancing PM2 process clusters..."
+            pm2 describe devaudit-backend > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+              pm2 reload devaudit-backend --update-env
+            else
+              pm2 start server.js --name "devaudit-backend"
+            fi
+            
+            echo "🏁 Deployment cycle completed successfully!"
