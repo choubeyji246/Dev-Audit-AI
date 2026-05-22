@@ -30,6 +30,10 @@ const userSchema = new Schema<IUser>(
     password: { 
       type: String, 
       select: false // Excludes password from default query returns
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     }
   },
   { 
