@@ -7,6 +7,7 @@ export interface IUser extends Document {
   avatar?: string;
   password?: string; // Optional because we use 'select: false' in queries
   comparePassword(enteredPassword: string): Promise<boolean>;
+  isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
