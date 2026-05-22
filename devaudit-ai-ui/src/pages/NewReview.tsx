@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
 import { apiClient } from '../api';
@@ -24,7 +24,7 @@ export default function NewReview() {
       setErrorLog(null);
       // Parse owner and repo name from common Git URL formats
       const match = submitData.url.match(/github.com[:\/ ]([^\/]+)\/([^\/]+)(?:\.git)?$/i);
-      if (!match) throw { response: { data: { error: 'Invalid GitHub repository URL. Use https://github.com/owner/repo.git' } } };
+      if (!match) throw { response: { data: { message: 'Invalid GitHub repository URL. Use https://github.com/owner/repo.git' } } };
       const owner = match[1];
       const repoName = match[2].replace(/\.git$/i, '');
 
@@ -57,7 +57,13 @@ export default function NewReview() {
       }, 2000);
     },
     onError: (err: any) => {
-      const fallbackError = err.response?.data?.detail || err.response?.data?.error || "Failed to establish a verification handshake with backend core orchestrators.";
+      // 🟢 THE FRONTEND FIX: Read your specific backend error message parameters
+      const fallbackError = 
+        err.response?.data?.message || 
+        err.response?.data?.error || 
+        err.response?.data?.detail || 
+        "Failed to establish a verification handshake with backend core orchestrators.";
+      
       setErrorLog(fallbackError);
     }
   });
@@ -106,9 +112,9 @@ export default function NewReview() {
               </div>
 
               {errorLog && (
-                <div className="p-4 bg-accentred/10 border border-accentred/20 text-accentred rounded-lg text-sm flex items-center gap-3">
-                  <AlertCircle size={18} className="shrink-0" />
-                  <span>{errorLog}</span>
+                <div className="p-4 bg-accentred/10 border border-accentred/20 text-accentred rounded-lg text-sm flex items-start gap-3">
+                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                  <span className="leading-relaxed font-medium">{errorLog}</span>
                 </div>
               )}
 
